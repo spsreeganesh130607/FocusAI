@@ -1,0 +1,5 @@
+PySide6
+psutil
+Pillow
+opencv-python
+numpy
