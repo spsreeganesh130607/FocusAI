@@ -439,6 +439,21 @@
   gap: 12px;
 }
 
+.duration-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.duration-field-label {
+  font-size: 0.75rem !important;
+}
+
+.duration-error {
+  color: #fca5a5;
+  font-size: 0.82rem;
+}
+
 .timer-subtitle {
   margin-top: 8px;
   color: #a7b8cf;
@@ -460,6 +475,13 @@
 
 .full-button {
   width: 100%;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
 }
 
 .end-button {

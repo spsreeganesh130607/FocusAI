@@ -49,6 +49,7 @@ From the project root, start the desktop application with:
 The React website in `website/` includes a working focus timer with selectable durations,
 pause/resume and early finish controls, a recent-session log, and statistics/charts
 calculated from sessions stored in the browser's local storage.
+Session length can be set using separate hour and minute fields, up to 24 hours total.
 
 ```powershell
 cd website

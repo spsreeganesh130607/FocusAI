@@ -3,7 +3,7 @@ import './App.css'
 
 const SESSION_STORAGE_KEY = 'focusai.web.sessions'
 const TIMER_STORAGE_KEY = 'focusai.web.activeTimer'
-const DURATION_OPTIONS = [15, 25, 45, 60]
+const MAX_SESSION_MINUTES = 24 * 60
 const CATEGORY_OPTIONS = ['Deep work', 'Study', 'Reading', 'Writing', 'Other']
 const INITIAL_NOW = Date.now()
 
@@ -47,8 +47,12 @@ function loadSavedState() {
 }
 
 function formatTime(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
+  if (hours > 0) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
@@ -91,6 +95,7 @@ function App() {
   const [initialState] = useState(loadSavedState)
   const [sessions, setSessions] = useState(initialState.sessions)
   const [timer, setTimer] = useState(initialState.activeTimer)
+  const [durationHours, setDurationHours] = useState(0)
   const [durationMinutes, setDurationMinutes] = useState(25)
   const [task, setTask] = useState('')
   const [category, setCategory] = useState(CATEGORY_OPTIONS[0])
@@ -98,10 +103,13 @@ function App() {
   const [notice, setNotice] = useState('')
   const [storageWarning, setStorageWarning] = useState(initialState.storageWarning)
 
+  const selectedDurationMinutes = durationHours * 60 + durationMinutes
+  const durationIsValid =
+    selectedDurationMinutes >= 1 && selectedDurationMinutes <= MAX_SESSION_MINUTES
   const timerRunning = Boolean(timer?.endsAt)
   const remainingSeconds = timerRunning
     ? Math.max(0, Math.ceil((timer.endsAt - now) / 1000))
-    : timer?.remainingSeconds ?? durationMinutes * 60
+    : timer?.remainingSeconds ?? selectedDurationMinutes * 60
   const timerProgress = timer
     ? Math.min(
         100,
@@ -184,8 +192,8 @@ function App() {
   }, [timerRunning, remainingSeconds, finishSession])
 
   function startSession() {
-    if (timer) return
-    const totalSeconds = durationMinutes * 60
+    if (timer || !durationIsValid) return
+    const totalSeconds = selectedDurationMinutes * 60
     setNotice('')
     setTimer({
       durationSeconds: totalSeconds,
@@ -340,18 +348,49 @@ function App() {
                       </select>
                     </div>
                     <div>
-                      <label htmlFor="session-duration">Duration</label>
-                      <select
-                        id="session-duration"
-                        onChange={(event) => setDurationMinutes(Number(event.target.value))}
-                        value={durationMinutes}
-                      >
-                        {DURATION_OPTIONS.map((minutes) => (
-                          <option key={minutes} value={minutes}>{minutes} minutes</option>
-                        ))}
-                      </select>
+                      <label>Session duration (max 24 hours)</label>
+                      <div className="duration-inputs">
+                        <div>
+                          <label className="duration-field-label" htmlFor="session-hours">Hours</label>
+                          <input
+                            id="session-hours"
+                            type="number"
+                            min="0"
+                            max="24"
+                            step="1"
+                            inputMode="numeric"
+                            value={durationHours}
+                            onChange={(event) => {
+                              const hours = Math.min(24, Math.max(0, Number(event.target.value) || 0))
+                              setDurationHours(hours)
+                              if (hours === 24) setDurationMinutes(0)
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="duration-field-label" htmlFor="session-minutes">Minutes</label>
+                          <input
+                            id="session-minutes"
+                            type="number"
+                            min="0"
+                            max={durationHours === 24 ? 0 : 59}
+                            step="1"
+                            inputMode="numeric"
+                            value={durationMinutes}
+                            onChange={(event) => {
+                              const minutes = Math.min(59, Math.max(0, Number(event.target.value) || 0))
+                              setDurationMinutes(durationHours === 24 ? 0 : minutes)
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  {!durationIsValid && (
+                    <p className="duration-error" role="alert">
+                      Set a session duration from 1 minute to 24 hours.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <>
@@ -360,7 +399,7 @@ function App() {
                     <span className="timer-badge">{timer.category}</span>
                   </div>
                   <p className="timer-subtitle">
-                    {timerRunning ? 'Time to focus' : 'Paused'} · {Math.ceil(timer.durationSeconds / 60)} min session
+                    {timerRunning ? 'Time to focus' : 'Paused'} · {formatDuration(timer.durationSeconds)} session
                   </p>
                 </>
               )}
@@ -377,7 +416,7 @@ function App() {
               </div>
               <div className="timer-actions">
                 {!timer ? (
-                  <button className="primary-button full-button" type="button" onClick={startSession}>
+                  <button className="primary-button full-button" type="button" onClick={startSession} disabled={!durationIsValid}>
                     Start timer
                   </button>
                 ) : timerRunning ? (
