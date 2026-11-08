@@ -44,9 +44,11 @@ From the project root, start the desktop application with:
 .\venv\Scripts\python.exe .\main.py
 ```
 
-## Website preview
+## Website app
 
-A React website version is available in the `website/` folder for GitHub Pages or other deployment targets.
+The React website in `website/` includes a working focus timer with selectable durations,
+pause/resume and early finish controls, a recent-session log, and statistics/charts
+calculated from sessions stored in the browser's local storage.
 
 ```powershell
 cd website
@@ -61,4 +63,9 @@ cd website
 npm run build
 ```
 
-This front end is intended as a GitHub-ready landing/dashboard prototype for the FocusAI concept and can be adapted into a full production web app later.
+The website's data stays in the current browser and does not sync with the Windows
+application or other browsers. A hosted browser app cannot monitor other desktop
+applications; use the Windows app for foreground-application activity tracking.
+
+The site is deployed from `main` to GitHub Pages by the workflow in
+`.github/workflows/deploy.yml`.
